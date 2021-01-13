@@ -44,7 +44,7 @@ let options = {
 }
 
 
-myChart.setOption(option = {});
+myChart.setOption(options);
 let collpasePage = async name => {
 
     let rootData = {}
@@ -59,40 +59,43 @@ let collpasePage = async name => {
             name: page["*"],
         }
     })
-    rootData.name = name
-    rootData.children = children
 
-    console.log(rootData)
-    options.series[0].data = [rootData]
-    myChart.setOption(options)
+    // 此处加空格的目的是，避免 ecahrts 在 diff 时发现节点位置变换，只移动了节点位置缺未删除节点连线
+    rootData.name = name + " "
+    rootData.children = children
+    myChart.setOption({
+        series: [{data: [rootData]}]
+    }, {noMerge: true})
 }
 
 // 监听搜索事件
 document.querySelector("#button").addEventListener("click", async () => {
-
-    myChart.showLoading()
-    try{
-        let value = document.querySelector("#search").value
-        let res = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${value}`)
-        let json = await res.json()
-        let page = json[1][0]
-        await collpasePage(page)
-    }finally{
-        setTimeout(() => {
-            myChart.hideLoading()
-        }, 0)
-    }
+    setTimeout(async () => {
+        myChart.showLoading()
+        try{
+            let value = document.querySelector("#search").value
+            let res = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${value}`)
+            let json = await res.json()
+            let page = json[1][0]
+            await collpasePage(page)
+        }finally{
+            setTimeout(() => {
+                myChart.hideLoading()
+            }, 0)
+        }
+    }, 0)
 })
 
 myChart.on("click", async (params) => {
-    myChart.showLoading()
-    try{
-        let page = params.data.name
-        await collpasePage(page)
-    }finally{
-        setTimeout(() => {
-            myChart.hideLoading()
-        }, 0)
-    }
-
+    setTimeout(async () => {
+        myChart.showLoading()
+        try{
+            let page = params.data.name
+            await collpasePage(page)
+        }finally{
+            setTimeout(() => {
+                myChart.hideLoading()
+            }, 0)
+        }
+    }, 0)
 })
