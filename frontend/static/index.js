@@ -3,8 +3,7 @@ let myChart = echarts.init(document.getElementById('main'));
 
 let data = {}
 
-
-myChart.setOption(option = {
+let options = {
     tooltip: {
         trigger: 'item',
         triggerOn: 'mousemove'
@@ -42,11 +41,14 @@ myChart.setOption(option = {
             animationDurationUpdate: 750
         }
     ]
-});
+}
 
-let rootData = {}
 
+myChart.setOption(option = {});
 let collpasePage = async name => {
+
+    let rootData = {}
+    
     let res = await fetch(`./api/getpage/${name}`)
     let json = await res.json()
     let links = json.parse.links
@@ -55,32 +57,42 @@ let collpasePage = async name => {
     let children = pages.map(page => {
         return {
             name: page["*"],
-            children: [],
         }
     })
     rootData.name = name
     rootData.children = children
-    myChart.setOption({
-        series:[{data: [rootData]}]
-    })
+
+    console.log(rootData)
+    options.series[0].data = [rootData]
+    myChart.setOption(options)
 }
 
 // 监听搜索事件
 document.querySelector("#button").addEventListener("click", async () => {
 
     myChart.showLoading()
-    let value = document.querySelector("#search").value
-    let res = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${value}`)
-    let json = await res.json()
-    let page = json[1][0]
-    await collpasePage(page)
-    myChart.hideLoading()
-
+    try{
+        let value = document.querySelector("#search").value
+        let res = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${value}`)
+        let json = await res.json()
+        let page = json[1][0]
+        await collpasePage(page)
+    }finally{
+        setTimeout(() => {
+            myChart.hideLoading()
+        }, 0)
+    }
 })
 
 myChart.on("click", async (params) => {
-    let name = params.data.name
     myChart.showLoading()
-    await collpasePage(name)
-    myChart.hideLoading()
+    try{
+        let page = params.data.name
+        await collpasePage(page)
+    }finally{
+        setTimeout(() => {
+            myChart.hideLoading()
+        }, 0)
+    }
+
 })
